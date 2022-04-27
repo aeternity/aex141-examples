@@ -1,0 +1,9 @@
+1. Remove `stateful entrypoint mint : (address, option(string)) => int` from interface specification in AEX.
+2. Correct: 
+        record meta_info = 
+        { name: string
+        , symbol: string 
+        , base_url: option(string)
+        , type : metadata_type}
+3. Correct: datatype metadata = String(string) | Map(string, string)
+4. Correct: entrypoint balance(address) : option(int)

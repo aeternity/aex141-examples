@@ -1,0 +1,5 @@
+namespace Utils =
+    function bool_to_string(v: bool): string =
+        switch (v)
+            true => "true"
+            false => "false"

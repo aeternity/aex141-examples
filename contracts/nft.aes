@@ -1,0 +1,222 @@
+@compiler >= 6
+
+include "List.aes"
+include "Option.aes"
+include "String.aes"
+include "utils.aes"
+include "interfaces.aes"
+
+contract UniqueNFT =
+    // Events.
+    // Transfer(from, to, token_id)
+    // Approval(owner, approved, token_id, enabled)
+    // ApprovalForAll(owner, operator, enabled)
+    datatype event 
+        = Transfer(address, address, int)
+        | Approval(address, address, int, string)
+        | ApprovalForAll(address, address, string)
+
+    // Metadata has a type and value.
+    //
+    // Types:
+    //
+    // URL is any url except IPFS.
+    // IPFS is an IPFS ID.
+    // OBJECT_ID is a unique identifier for a physical 
+    // object (car's VIN number, real estate cadastral code, etc)
+    // MAP is for other key/value based properties. 
+    //
+    // Values:
+    // URL, IPFD, OBJECT_ID: string
+    // MAP: map(string, string)
+    datatype metadata_type = URL | IPFS | OBJECT_ID | MAP
+    datatype metadata = String(string) | Map(string, string)
+
+    record meta_info = 
+        { name: string
+        , symbol: string
+        , metadata_type : metadata_type 
+        , base_url: option(string) }
+    
+    record state = 
+        { owner: address
+        , meta_info: meta_info
+        , owners: map(int, address)
+        , balances: map(address, int)
+        , approvals: map(int, address)
+        , operators: map(address, map(address, bool))
+        , metadata: map(int, metadata)
+        , set: bool }
+
+    stateful entrypoint init(name: string, symbol: string, metadata_type: metadata_type, base_url: option(string)) = 
+        require(String.length(name) >= 1, "STRING_TOO_SHORT_NAME")
+        require(String.length(name) >= 1, "STRING_TOO_SHORT_SYMBOL")
+
+        { owner = Call.caller,
+          meta_info = { name = name, symbol = symbol, metadata_type = metadata_type, base_url = base_url },
+          owners = {},
+          balances = {},
+          approvals = {},
+          operators = {},
+          metadata = {},
+          set = false }
+            
+    stateful entrypoint define_token(to: address, metadata: metadata) =
+        require(state.set == false, "TOKEN_ALREADY_DEFINED")
+        require_contract_owner()
+
+        put( state { balances[to = 0] @ b = b + 1, owners[0] = to, metadata[0] = metadata, set = true } )
+        switch(invoke_nft_receiver(Contract.address, to, 0, None))
+            // to address is a contract and invocation failed.
+            (true, false) => abort("SAFE_MINT_FAILED")
+            _ => Chain.event(Transfer(Contract.address, to, 0)) 
+
+    // Returns a hardcoded list of all implemented extensions on the deployed contract.
+    entrypoint aex141_extensions() : list(string) =
+        []
+
+    // Returns meta information associated with the token contract.
+    entrypoint meta_info() : meta_info = 
+        state.meta_info
+
+    // Returns meta data associated with a token. 
+    entrypoint metadata(token_id: int) : option(metadata) = 
+        switch(Map.lookup(token_id, state.metadata))
+            None => None
+            Some(v) =>
+                if(state.meta_info.metadata_type == URL)
+                    // We have URL as the metadata type,
+                    // if no base_url is set we return the metadata as it is,
+                    // if a base_url is set we concatenate the metadata with the base url.
+                    switch(state.meta_info.base_url)
+                        None =>
+                            Some(v)
+                        Some(base_url) =>
+                            switch(v)
+                                String(s) =>
+                                    Some(String(String.concats([base_url, " ", s])))
+                else
+                    // Not an URL, so return the metadata as it is.
+                    Some(v)
+
+    // Returns the balance of an account with address owner, if the account exists. 
+    // If the owner address is unknown to the contract None will be returned. Using option type 
+    // as a return value allows us to determine if the account has balance of 0, more than 0, 
+    // or the account has never had balance and is still unknown to the contract.
+    entrypoint balance(owner: address) : option(int) =
+        Map.lookup(owner, state.balances)
+
+    // Returns the owner's address for the provided token, if the token is minted. 
+    // If the token isn't minted None will be returned.
+    entrypoint owner(token_id: int) : option(address) =
+        Map.lookup(token_id, state.owners)
+
+    // Transfers token from the from address to the to address. Will invoke NFTReceiver if to is a contract receiver. 
+    // If provided data will be submitted with the invocation of NFTReceiver. Emits the Transfer event.
+    //
+    // Should throw if:
+    // - Call.caller is not the current owner, an authorized operator or the approved address for this token;
+    // - from isn't the current owner;
+    // - token isn't a valid token;
+    // - the invocation of NFTReceiver fails.    
+    stateful entrypoint transfer(from: address, to: address, token_id: int, data: option(string)) : unit =
+        require_authorized(token_id)
+        // require(Map.member(token_id, state.owners), "INVALID_TOKEN_ID")
+        require_token_owner(token_id, from)
+        
+        // TODO: remove_approval(_token_id)
+        remove_approval(token_id)
+        put( state { balances[from] @b = b - 1, balances[to = 0] @nb = nb + 1, owners[token_id] = to } )
+        switch(invoke_nft_receiver(from, to, token_id, data))
+            // to address is a contract and invocation failed.
+            (true, false) => abort("SAFE_TRANSFER_FAILED")
+            _ => Chain.event(Transfer(from, to, token_id))
+
+    // Sets the approved address to interact on behalf of an owner for the token. 
+    // If enabled is true the operator is approved, if false the approval is revoked. 
+    // Throws unless caller is the current NFT owner, orsan authorized operator of the current owner. 
+    // Emits the Approval event.
+    stateful entrypoint approve(approved: address, token_id: int, enabled: bool) : unit =
+        require_authorized(token_id)
+        if(enabled)
+            put( state { approvals[token_id] = approved })
+        else
+            remove_approval(token_id)
+        Chain.event(Approval(state.owners[token_id], approved, token_id, Utils.bool_to_string(enabled)))
+
+
+    // Enables or disables approval for an operator to manage all of the caller's assets. 
+    // If enabled is true the operator is approved, if false the approval is revoked. 
+    // Emits the ApprovalForAll event.
+    stateful entrypoint approve_all(operator: address, enabled: bool) : unit =
+        put( state { operators = { [Call.caller] = { [operator] = enabled }} } )
+        Chain.event(ApprovalForAll(Call.caller, operator, Utils.bool_to_string(enabled)))
+
+    // Returns the address approved to interact with the token or returns None if no approval has been set. 
+    // Throws if token is an invalid token ID.
+    entrypoint get_approved(token_id: int) : option(address) =
+        Map.lookup(token_id, state.approvals)
+
+    // Returns true if approved is approved to transact for token.
+    entrypoint is_approved(token_id: int, a: address) : bool =
+        switch(Map.lookup(token_id, state.approvals))
+            None => false
+            Some(o) => o == a
+
+    // Returns true if operator is approved to commit transactions on behalf of owner.
+    // Indicates wether an address is an authorized operator for another address.
+    entrypoint is_approved_for_all(owner: address, operator: address) : bool =
+        switch(Map.lookup(owner, state.operators))
+            None => false
+            Some(ops) =>
+                switch(Map.lookup(operator, ops))
+                    None => false
+                    Some(v) => v
+
+    // Helper functions
+    private function require_contract_owner() : unit =
+        require(Call.caller == state.owner, "ONLY_CONTRACT_OWNER_CALL_ALLOWED")
+
+    private function is_token_owner(token_id: int, a: address) : bool =
+        switch(Map.lookup(token_id, state.owners))
+            None => false
+            Some(o) => o == a
+
+    private function require_token_owner(token_id: int, a: address) : unit =
+        require(is_token_owner(token_id, a), "ONLY_OWNER_CALL_ALLOWED")
+
+    private function require_token_owner_or_operator(token_id: int) : unit =
+        let owner = switch(owner(token_id))
+            None => abort("INVALID_TOKEN_ID")
+            Some(v) => v
+        require(Call.caller == owner || is_approved_for_all(owner, Call.caller), "ONLY_OWNER_OR_OPERATOR_CALL_ALLOWED")
+
+    // private function is_authorized(token_id: int, a: address) : bool =
+    //     let owner = switch(owner(token_id))
+    //         None => abort("INVALID_TOKEN_ID")
+    //         Some(v) => v
+    //     a == owner || is_approved(token_id, a) || is_approved_for_all(owner, a)
+
+    private function require_authorized(token_id: int) : unit =
+        let owner = switch(owner(token_id))
+            None => abort("INVALID_TOKEN_ID")
+            Some(v) => v
+        require(Call.caller == owner || is_approved(token_id, Call.caller) || is_approved_for_all(owner, Call.caller), "ONLY_OWNER_APPROVED_OR_OPERATOR_CALL_ALLOWED")
+
+    private stateful function remove_approval(token_id: int) : unit =
+        if(Map.member(token_id, state.approvals))
+            put( state { approvals = Map.delete(token_id, state.approvals)})
+    
+    // invoke_nft_receiver is a helper function for safe transfers.
+    // Returns a pair of bool as (is_contract, success).
+    private function invoke_nft_receiver(from: address, to: address, token_id: int, data: option(string)) : (bool * bool) =
+        if(Address.is_contract(to))
+            let c = Address.to_contract(to)
+
+            // Try to invoke onNFTReceived. 
+            switch(c.onNFTReceived(from, to, token_id, data, protected = true) : option(bool))
+                None => (true, false)       // The contract doesn't implement onNFTReceived
+                Some(val) => (true, val)
+        else
+            // The address is NOT a contract.
+            (false, false)

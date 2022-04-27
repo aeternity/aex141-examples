@@ -1,0 +1,7 @@
+.aeproject-store
+.DS_Store
+node_modules
+
+.vscode
+
+tmp
