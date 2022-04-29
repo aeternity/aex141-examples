@@ -1,7 +1,7 @@
 {
-  "name": "aeproject-project",
+  "name": "ae-nft",
   "version": "1.0.0",
-  "description": "This is the default package.json generated for your project",
+  "description": "NFT examples and tooling for Aeternity",
   "scripts": {
     "test": "mocha ./test/**/*.js --timeout 0 --exit"
   },
