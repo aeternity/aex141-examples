@@ -6,7 +6,8 @@ include "String.aes"
 include "utils.aes"
 include "interfaces.aes"
 
-contract UniqueNFT =
+// BaseNFT is a unique NFT representing a single object.
+contract BaseNFT =
     // Events.
     // Transfer(from, to, token_id)
     // Approval(owner, approved, token_id, enabled)
@@ -48,6 +49,8 @@ contract UniqueNFT =
         , metadata: map(int, metadata)
         , set: bool }
 
+    // Constructor. During initialization the contract's meta data will
+    // be set.
     stateful entrypoint init(name: string, symbol: string, metadata_type: metadata_type, base_url: option(string)) = 
         require(String.length(name) >= 1, "STRING_TOO_SHORT_NAME")
         require(String.length(name) >= 1, "STRING_TOO_SHORT_SYMBOL")
@@ -60,7 +63,13 @@ contract UniqueNFT =
           operators = {},
           metadata = {},
           set = false }
-            
+
+    // Defines the single token and object this NFT represents.
+    // This function isn't a part of the AEX specification.
+    //
+    // The code could also be moved to init if you desire so.
+    // In this example define_token can be used only once to define a single token.
+    // TODO: Change to fit your use case       
     stateful entrypoint define_token(to: address, metadata: metadata) =
         require(state.set == false, "TOKEN_ALREADY_DEFINED")
         require_contract_owner()
@@ -94,7 +103,7 @@ contract UniqueNFT =
                         Some(base_url) =>
                             switch(v)
                                 String(s) =>
-                                    Some(String(String.concats([base_url, " ", s])))
+                                    Some(String(String.concats([base_url, s])))
                 else
                     // Not an URL, so return the metadata as it is.
                     Some(v)
@@ -112,19 +121,19 @@ contract UniqueNFT =
         Map.lookup(token_id, state.owners)
 
     // Transfers token from the from address to the to address. Will invoke NFTReceiver if to is a contract receiver. 
-    // If provided data will be submitted with the invocation of NFTReceiver. Emits the Transfer event.
+    // If provided data will be submitted with the invocation of NFTReceiver.
     //
-    // Should throw if:
+    // Throws if:
     // - Call.caller is not the current owner, an authorized operator or the approved address for this token;
     // - from isn't the current owner;
     // - token isn't a valid token;
-    // - the invocation of NFTReceiver fails.    
+    // - the invocation of NFTReceiver fails.
+    //
+    // Emits the Transfer event.
     stateful entrypoint transfer(from: address, to: address, token_id: int, data: option(string)) : unit =
         require_authorized(token_id)
-        // require(Map.member(token_id, state.owners), "INVALID_TOKEN_ID")
         require_token_owner(token_id, from)
         
-        // TODO: remove_approval(_token_id)
         remove_approval(token_id)
         put( state { balances[from] @b = b - 1, balances[to = 0] @nb = nb + 1, owners[token_id] = to } )
         switch(invoke_nft_receiver(from, to, token_id, data))
@@ -134,10 +143,13 @@ contract UniqueNFT =
 
     // Sets the approved address to interact on behalf of an owner for the token. 
     // If enabled is true the operator is approved, if false the approval is revoked. 
-    // Throws unless caller is the current NFT owner, orsan authorized operator of the current owner. 
+    //
+    // Throws unless caller is the current NFT owner, or an authorized operator of the current owner. 
+    //
     // Emits the Approval event.
     stateful entrypoint approve(approved: address, token_id: int, enabled: bool) : unit =
         require_authorized(token_id)
+
         if(enabled)
             put( state { approvals[token_id] = approved })
         else
@@ -147,17 +159,18 @@ contract UniqueNFT =
 
     // Enables or disables approval for an operator to manage all of the caller's assets. 
     // If enabled is true the operator is approved, if false the approval is revoked. 
+    //
     // Emits the ApprovalForAll event.
     stateful entrypoint approve_all(operator: address, enabled: bool) : unit =
         put( state { operators = { [Call.caller] = { [operator] = enabled }} } )
         Chain.event(ApprovalForAll(Call.caller, operator, Utils.bool_to_string(enabled)))
 
-    // Returns the address approved to interact with the token or returns None if no approval has been set. 
-    // Throws if token is an invalid token ID.
+    // Returns the address approved to interact with the token or returns None 
+    // if no approval has been set. 
     entrypoint get_approved(token_id: int) : option(address) =
         Map.lookup(token_id, state.approvals)
 
-    // Returns true if approved is approved to transact for token.
+    // Returns true if a is approved to transact for the token.
     entrypoint is_approved(token_id: int, a: address) : bool =
         switch(Map.lookup(token_id, state.approvals))
             None => false
@@ -174,41 +187,42 @@ contract UniqueNFT =
                     Some(v) => v
 
     // Helper functions
-    private function require_contract_owner() : unit =
-        require(Call.caller == state.owner, "ONLY_CONTRACT_OWNER_CALL_ALLOWED")
 
+    // Returns true if a is the owner of the token with token_id.
     private function is_token_owner(token_id: int, a: address) : bool =
         switch(Map.lookup(token_id, state.owners))
             None => false
             Some(o) => o == a
 
+    // Throws if the caller is not the contract's owners.
+    private function require_contract_owner() : unit =
+        require(Call.caller == state.owner, "ONLY_CONTRACT_OWNER_CALL_ALLOWED")
+
+    // Throws if a is not the token's owner.
     private function require_token_owner(token_id: int, a: address) : unit =
         require(is_token_owner(token_id, a), "ONLY_OWNER_CALL_ALLOWED")
 
+    // Throws if the caller is not the token's owner or an operator.
     private function require_token_owner_or_operator(token_id: int) : unit =
         let owner = switch(owner(token_id))
             None => abort("INVALID_TOKEN_ID")
             Some(v) => v
         require(Call.caller == owner || is_approved_for_all(owner, Call.caller), "ONLY_OWNER_OR_OPERATOR_CALL_ALLOWED")
 
-    // private function is_authorized(token_id: int, a: address) : bool =
-    //     let owner = switch(owner(token_id))
-    //         None => abort("INVALID_TOKEN_ID")
-    //         Some(v) => v
-    //     a == owner || is_approved(token_id, a) || is_approved_for_all(owner, a)
-
+    // Throws if the caller is not the token's owner, approved or operator.
     private function require_authorized(token_id: int) : unit =
         let owner = switch(owner(token_id))
             None => abort("INVALID_TOKEN_ID")
             Some(v) => v
         require(Call.caller == owner || is_approved(token_id, Call.caller) || is_approved_for_all(owner, Call.caller), "ONLY_OWNER_APPROVED_OR_OPERATOR_CALL_ALLOWED")
 
+    // Helper function to remove an approval from the map.
     private stateful function remove_approval(token_id: int) : unit =
         if(Map.member(token_id, state.approvals))
             put( state { approvals = Map.delete(token_id, state.approvals)})
     
-    // invoke_nft_receiver is a helper function for safe transfers.
-    // Returns a pair of bool as (is_contract, success).
+    // Helper function for safe transfers.
+    // Returns a pair of bool (is_contract, success).
     private function invoke_nft_receiver(from: address, to: address, token_id: int, data: option(string)) : (bool * bool) =
         if(Address.is_contract(to))
             let c = Address.to_contract(to)

@@ -2,20 +2,25 @@ const { assert, expect, use } = require('chai');
 const { utils, wallets } = require('@aeternity/aeproject');
 const chaiAsPromised = require('chai-as-promised');
 
-const CONTRACT_SOURCE = './contracts/nft.aes';
+const CONTRACT_SOURCE = './contracts/base_nft.aes';
+const RECEIVER_CONTRACT_SOURCE = './test/receiver.aes';
 
 describe('nft', () => {
   let aeSdk;
   let contract;
+  let receiver_contract;
+  let source;
+  let filesystem;
 
   before(async () => {
     aeSdk = await utils.getSdk();
 
     // a filesystem object must be passed to the compiler if the contract uses custom includes
-    const filesystem = utils.getFilesystem(CONTRACT_SOURCE);
+    filesystem = utils.getFilesystem(CONTRACT_SOURCE);
 
     // get content of contract
-    const source = utils.getContractContent(CONTRACT_SOURCE);
+    source = utils.getContractContent(CONTRACT_SOURCE);
+    const receiver_contract_source = utils.getContractContent(RECEIVER_CONTRACT_SOURCE);
 
     // initialize the contract instance
     contract = await aeSdk.getContractInstance({ source, filesystem });
@@ -23,8 +28,11 @@ describe('nft', () => {
       'Test NFT', 
       'TST', 
       {'URL': []}, 
-      {'None' : []}
+      {'None': []}
     ]);
+
+    receiver_contract = await aeSdk.getContractInstance({ source: receiver_contract_source });
+    await receiver_contract.deploy(); 
 
     // create a snapshot of the blockchain state
     await utils.createSnapshot(aeSdk);
@@ -92,7 +100,43 @@ describe('nft', () => {
       const { decodedResult } = await contract.methods.owner(0);
       assert.equal(decodedResult, wallets[0].publicKey);
     }
+  });
 
+  it('NFT: define_token only by contract owner', async () => {
+    await expect(
+      contract.methods.define_token(wallets[0].publicKey, 
+      {'String': ['https://example.com/mynft']}, 
+      { onAccount: wallets[1].publicKey }))
+      .to.be.rejectedWith(`Invocation failed: "ONLY_CONTRACT_OWNER_CALL_ALLOWED"`);
+  });
+
+  it('NFT: contract with base_url', async () => {
+    let contract = await aeSdk.getContractInstance({ source, filesystem });
+    await contract.deploy([
+      'Test NFT', 
+      'TST', 
+      {'URL': []}, 
+      'https://example.com/'
+    ]);
+
+    const token = await contract.methods.define_token(wallets[0].publicKey, {'String': ['mynft']}, { onAccount: wallets[0].publicKey });
+    assert.equal(token.decodedEvents[0].name, 'Transfer');
+    assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
+    assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
+    assert.equal(token.decodedEvents[0].args[2], 0);
+
+    {
+      const  { decodedResult } = await contract.methods.metadata(0);
+      assert.equal(decodedResult.String[0], 'https://example.com/mynft');
+    }
+
+    {
+      const { decodedResult } = await contract.methods.meta_info();
+      assert.equal(decodedResult.name, 'Test NFT');
+      assert.equal(decodedResult.symbol, 'TST');
+      assert.isEmpty(decodedResult.metadata_type.URL);
+      assert.equal(decodedResult.base_url, 'https://example.com/');
+    }
   });
 
   it('NFT: transfer', async () => {
@@ -201,5 +245,34 @@ describe('nft', () => {
     await expect(
       contract.methods.transfer(wallets[2].publicKey, wallets[1].publicKey, 0, { onAccount: wallets[0].publicKey }))
       .to.be.rejectedWith(`Invocation failed: "ONLY_OWNER_CALL_ALLOWED"`);
+  });
+
+  it('NFT: safe transfer', async () => {
+    const token = await contract.methods.define_token(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: wallets[0].publicKey });
+    assert.equal(token.decodedEvents[0].name, 'Transfer');
+    assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
+    assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
+    assert.equal(token.decodedEvents[0].args[2], 0);
+
+    const to = `ak${receiver_contract.deployInfo.address.substr(2)}`;
+    const tr = await contract.methods.transfer(wallets[0].publicKey, to , 0, {'None': []}, { onAccount: wallets[0].publicKey });
+    assert.equal(tr.decodedEvents[0].name, 'Transfer');
+    assert.equal(tr.decodedEvents[0].args[0], wallets[0].publicKey);
+    assert.equal(tr.decodedEvents[0].args[1], to);
+    assert.equal(tr.decodedEvents[0].args[2], 0);
+  });
+
+  it('NFT: failed safe transfer', async () => {
+    const token = await contract.methods.define_token(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: wallets[0].publicKey });
+    assert.equal(token.decodedEvents[0].name, 'Transfer');
+    assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
+    assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
+    assert.equal(token.decodedEvents[0].args[2], 0);
+
+    const to = `ak${receiver_contract.deployInfo.address.substr(2)}`;
+
+    await expect(
+      contract.methods.transfer(wallets[0].publicKey, to, 0, 'FAILS', { onAccount: wallets[0].publicKey }))
+      .to.be.rejectedWith(`Invocation failed: "SAFE_TRANSFER_FAILED"`);
   });
 });

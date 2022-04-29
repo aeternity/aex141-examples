@@ -6,7 +6,6 @@ to the ERC-721 standard. Anyone being able to work with these contracts should
 be able to work with the contract on Aeternity as well.
 
 ## License
-Copyright (c) 2021 [UAB Appiness](https://appiness.it)
 Copyright (c) 2022 [Toqns Inc.](https://toqns.com)
 
 ISC License
@@ -34,26 +33,9 @@ For bugs and feature requests please file an issue on this GitHub repo.
 
 ## How to use
 
-N.B. Proper documentation will be provided once the project reaches a stable version.
+The repo provides different kinds of example contracts. The contracts can be found in the `contracts` directory.
 
-### Deployment and initialization
+### Example contracts
 
-Deploy the `NFT.aes` through your favorite SDK. The contract should be initialized with a `name` and `code`.
+`base_nft.aes` is an example of a uniqe NFT representing a single object.
 
-Example: `await contract.deploy(["My NFT", "MYN"]);`.
-
-### Minting
-There are two ways to mint a coin: 
-
-Simple minting: `mint(_to: address, _tokenID: int)`. Requires the recipient's address and the tokenID that
-will be minted.
-
-Minting with metadata: `mintWithTokenData(_to: address, _tokenID: int, _tokenDataType: string, _tokenDataValue: string)`. 
-Requires the recipient's address and the tokenID that will be minted. Additionally requires a type and value.
-
-Metadata is kept simple by design. The idea is to store a pointer to where further data can be found.
-
-Examples:
-
-`mintWithTokenData("ak_2aJV4GK5YZXNRtyFF5i8yUHcFjS5NRLxpjxBKNHqE8Tfq4SYFa", 0, "uri", "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiirMJ8u2NLgmgszg13pYrDKEoip")`
-`mintWithTokenData("ak_2aJV4GK5YZXNRtyFF5i8yUHcFjS5NRLxpjxBKNHqE8Tfq4SYFa", 0, "object_id", "123456")`

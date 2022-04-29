@@ -1,0 +1,7 @@
+@compiler >= 6
+
+contract NFTReceiver = 
+    entrypoint onNFTReceived(from: address, to: address, token: int, data: option(string)) : bool =
+        switch(data)
+            None => true
+            Some(_) => false
