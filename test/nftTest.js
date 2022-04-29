@@ -180,29 +180,26 @@ describe('nft', () => {
   });
 
   it('NFT: unauthorized transfer', async () => {
+    const token = await contract.methods.define_token(wallets[1].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: wallets[0].publicKey });
+    assert.equal(token.decodedEvents[0].name, 'Transfer');
+    assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
+    assert.equal(token.decodedEvents[0].args[1], wallets[1].publicKey);
+    assert.equal(token.decodedEvents[0].args[2], 0);
+
+    await expect(
+      contract.methods.transfer(wallets[1].publicKey, wallets[0].publicKey, 0, { onAccount: wallets[0].publicKey }))
+      .to.be.rejectedWith(`Invocation failed: "ONLY_OWNER_APPROVED_OR_OPERATOR_CALL_ALLOWED"`);
+  });
+
+  it('NFT: invalid transfer', async () => {
     const token = await contract.methods.define_token(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: wallets[0].publicKey });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
     assert.equal(token.decodedEvents[0].args[2], 0);
 
-    {
-      const { decodedResult } = await contract.methods.owner(0);
-      assert.equal(decodedResult, wallets[0].publicKey);
-    }
-
-    {
-      const { decodedResult } = await contract.methods.is_approved(0, wallets[1].publicKey);
-      assert.equal(decodedResult, false);
-    }
-
-    {
-      const { decodedResult } = await contract.methods.is_approved_for_all(wallets[0].publicKey, wallets[1].publicKey);
-      assert.equal(decodedResult, false);
-    }
-
     await expect(
-      contract.methods.transfer(wallets[0].publicKey, wallets[1].publicKey, 0, { onAccount: wallets[1].publicKey }))
-      .to.be.rejectedWith(`Invocation failed: "ONLY_OWNER_APPROVED_OR_OPERATOR_CALL_ALLOWED"`);
+      contract.methods.transfer(wallets[2].publicKey, wallets[1].publicKey, 0, { onAccount: wallets[0].publicKey }))
+      .to.be.rejectedWith(`Invocation failed: "ONLY_OWNER_CALL_ALLOWED"`);
   });
 });
