@@ -2,7 +2,7 @@ const { assert, expect, use } = require('chai');
 const { utils, wallets } = require('@aeternity/aeproject');
 const chaiAsPromised = require('chai-as-promised');
 
-const CONTRACT_SOURCE = './contracts/mintable_burnable_nft.aes';
+const CONTRACT_SOURCE = './contracts/mintable_burnable.aes';
 const RECEIVER_CONTRACT_SOURCE = './test/receiver.aes';
 
 describe('mintable, burnable nft', () => {
