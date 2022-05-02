@@ -6,8 +6,8 @@ include "String.aes"
 include "utils.aes"
 include "interfaces.aes"
 
-// MintableBurnableNFT implements the mintable and burnable extension.
-contract MintableBurnableNFT =
+// SwappableNFT implements the mintable and swappable extensions.
+contract SwappableNFT =
     // Events.
     // Transfer(from, to, token_id)
     // Approval(owner, approved, token_id, enabled)
@@ -16,6 +16,7 @@ contract MintableBurnableNFT =
         = Transfer(address, address, int)
         | Approval(address, address, int, string)
         | ApprovalForAll(address, address, string)
+        | Swap(address, int)
 
     // Metadata has a type and value.
     //
@@ -47,7 +48,8 @@ contract MintableBurnableNFT =
         , approvals: map(int, address)
         , operators: map(address, map(address, bool))
         , metadata: map(int, metadata)
-        , counter: int }
+        , counter: int
+        , swapped: map(address, int) }
 
     // Constructor. During initialization the contract's meta data will
     // be set.
@@ -62,7 +64,8 @@ contract MintableBurnableNFT =
           approvals = {},
           operators = {},
           metadata = {},
-          counter = 0 }
+          counter = 0,
+          swapped = {} }
 
     // Issues a new token to the provided address. If the owner is a contract, NFTReceiver will be called 
     // with data if provided.
@@ -87,21 +90,27 @@ contract MintableBurnableNFT =
         
         token_id
 
-    // Burns the token of the provided token id from Call.caller. 
-    // Emits the Transfer event.
-    stateful entrypoint burn(token_id: int) : unit =
-        require_authorized(token_id)
+    // Burns the whole balance of the Call.caller and stores the same amount in the swapped map.
+    stateful entrypoint swap() : unit = 
+        switch(Map.lookup(Call.caller, state.balances))
+            Some(tokens) =>
+                // TODO: Remove from owners and metadata as well?
+                put( state { balances[Call.caller] = 0, swapped[Call.caller] = tokens } )
+                Chain.event(Swap(Call.caller, tokens))
 
-        let owner = switch(owner(token_id))
-            None => abort("INVALID_TOKEN_ID")
+    // Returns the amount of tokens that were burned trough swap for the provided account.
+    stateful entrypoint check_swap(account: address) : int =
+        switch(Map.lookup(Call.caller, state.swapped))
+            None => 0
             Some(v) => v
 
-        put( state { balances[owner] @ b = b - 1, owners = Map.delete(token_id, state.owners), metadata = Map.delete(token_id, state.metadata) } )
-        Chain.event(Transfer(owner, Contract.address, token_id))
+    // Returns all of the swapped tokens that are stored in contract state.
+    stateful entrypoint swapped() : map(address, int) =
+        state.swapped
 
     // Returns a hardcoded list of all implemented extensions on the deployed contract.
     entrypoint aex141_extensions() : list(string) =
-        ["mintable", "burnable"]
+        ["mintable", "swappable"]
 
     // Returns meta information associated with the token contract.
     entrypoint meta_info() : meta_info = 
