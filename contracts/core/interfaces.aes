@@ -35,7 +35,7 @@ contract interface NFT =
     // Returns a hardcoded list of all implemented extensions on the deployed contract.
     entrypoint aex141_extensions : () => list(string)
 
-    // Returns meta information associated with the token contract.
+    // Returns meta information associated with the contract.
     entrypoint meta_info : () => meta_info
 
     // Returns meta data associated with a token. 
@@ -43,13 +43,13 @@ contract interface NFT =
     // as well as by implementing the Mintable extention.
     entrypoint metadata : (int) => option(metadata)
 
-    // Returns the account balance of another account with address owner, if the account exists. 
-    // If the owner address is unknown to the contract None will be returned. Using option type 
-    // as a return value allows us to determine if the account has balance of 0, more than 0, 
-    // or the account has never had balance and is still unknown to the contract.
+    // Returns the account balance of another account with address `owner` if the account has a balance. 
+    // If the owner address is unknown to the contract `None` will be returned. Using `option` type as a 
+    // return value allows us to determine if the account has balance of 0, more than 0, or the account 
+    // has never had balance and is still unknown to the contract.
     entrypoint balance : (address) => option(int)
 
-    // Returns the owner's address for the provided token, if the token is minted. 
+    // Returns the owner's address for the provided token if the token is minted. 
     // If the token isn't minted None will be returned.
     entrypoint owner : (int) => option(address)
 

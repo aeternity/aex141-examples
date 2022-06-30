@@ -72,7 +72,7 @@ contract MintableBurnableNFT =
     // be set.
     stateful entrypoint init(name: string, symbol: string, metadata_type: metadata_type, base_url: option(string)) = 
         require(String.length(name) >= 1, "STRING_TOO_SHORT_NAME")
-        require(String.length(name) >= 1, "STRING_TOO_SHORT_SYMBOL")
+        require(String.length(symbol) >= 1, "STRING_TOO_SHORT_SYMBOL")
 
         { owner = Call.caller,
           meta_info = { name = name, symbol = symbol, metadata_type = metadata_type, base_url = base_url },
