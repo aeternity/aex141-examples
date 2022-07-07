@@ -10,20 +10,24 @@ describe('credential nft', () => {
   let contract;
   let receiver_contract;
   let source;
-  let filesystem;
+  let fileSystem;
+  let accounts;
 
   before(async () => {
     aeSdk = await utils.getSdk();
 
-    // a filesystem object must be passed to the compiler if the contract uses custom includes
-    filesystem = utils.getFilesystem(CONTRACT_SOURCE);
+    // initialize the default accounts that can be passed to a contract methods in order to execute it on behalf of a specific accounts
+    accounts = utils.getDefaultAccounts();
+
+    // a fileSystem object must be passed to the compiler if the contract uses custom includes
+    fileSystem = utils.getFilesystem(CONTRACT_SOURCE);
 
     // get content of contract
     source = utils.getContractContent(CONTRACT_SOURCE);
     const receiver_contract_source = utils.getContractContent(RECEIVER_CONTRACT_SOURCE);
 
     // initialize the contract instance
-    contract = await aeSdk.getContractInstance({ source, filesystem });
+    contract = await aeSdk.getContractInstance({ source, fileSystem });
     await contract.deploy([
       'Credential NFT', 
       'TST'
@@ -58,7 +62,7 @@ describe('credential nft', () => {
   });
 
   it('NFT: mint token', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'Map': [["course", "NFT 101"], ["score", "A+"]]}, { onAccount: wallets[0].publicKey });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'Map': [["course", "NFT 101"], ["score", "A+"]]}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -88,7 +92,7 @@ describe('credential nft', () => {
     }
 
     let new_token_id = token_id + BigInt(1);
-    const token1 = await contract.methods.mint(wallets[0].publicKey, {'Map': [["course", "NFT 201"], ["score", "A+"]]}, { onAccount: wallets[0].publicKey });
+    const token1 = await contract.methods.mint(wallets[0].publicKey, {'Map': [["course", "NFT 201"], ["score", "A+"]]}, { onAccount: accounts[0] });
     assert.equal(token1.decodedEvents[0].name, 'Transfer');
     assert.equal(token1.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token1.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -101,22 +105,22 @@ describe('credential nft', () => {
       contract.methods.mint(wallets[0].publicKey, 
       {'Map': [["course", "NFT 101"], ["score", "A+"]]},
       {'None': []}, 
-      { onAccount: wallets[1].publicKey }))
+      { onAccount: accounts[1] }))
       .to.be.rejectedWith(`Invocation failed: "ONLY_CONTRACT_OWNER_CALL_ALLOWED"`);
   });
 
   it('NFT: transfer', async () => {
-    const token = await contract.methods.mint(wallets[1].publicKey, {'Map': [["course", "NFT 101"], ["score", "A+"]]}, { onAccount: wallets[0].publicKey });
+    const token = await contract.methods.mint(wallets[1].publicKey, {'Map': [["course", "NFT 101"], ["score", "A+"]]}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[1].publicKey);
     assert.equal(token.decodedEvents[0].args[2], 0);
 
     await expect(
-      contract.methods.transfer(wallets[1].publicKey, wallets[2].publicKey, 0, {'None':[]}, { onAccount: wallets[1].publicKey }))
+      contract.methods.transfer(wallets[1].publicKey, wallets[2].publicKey, 0, {'None':[]}, { onAccount: accounts[1] }))
       .to.be.rejectedWith(`Invocation failed: "ONLY_CONTRACT_OWNER_OR_APPROVED_CALL_ALLOWED`);
 
-    const tr = await contract.methods.transfer(wallets[1].publicKey, wallets[2].publicKey, 0, {'None':[]}, { onAccount: wallets[0].publicKey });
+    const tr = await contract.methods.transfer(wallets[1].publicKey, wallets[2].publicKey, 0, {'None':[]}, { onAccount: accounts[0] });
     assert.equal(tr.decodedEvents[0].name, 'Transfer');
     assert.equal(tr.decodedEvents[0].args[0], wallets[1].publicKey);
     assert.equal(tr.decodedEvents[0].args[1], wallets[2].publicKey);
@@ -127,14 +131,14 @@ describe('credential nft', () => {
   });
 
   it('NFT: approve', async () => {
-    const token = await contract.methods.mint(wallets[1].publicKey, {'Map': [["course", "NFT 101"], ["score", "A+"]]}, { onAccount: wallets[0].publicKey });
+    const token = await contract.methods.mint(wallets[1].publicKey, {'Map': [["course", "NFT 101"], ["score", "A+"]]}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[1].publicKey);
     assert.equal(token.decodedEvents[0].args[2], 0);
 
     await expect(
-      contract.methods.approve(wallets[1].publicKey, 0, true, { onAccount: wallets[1].publicKey }))
+      contract.methods.approve(wallets[1].publicKey, 0, true, { onAccount: accounts[1] }))
       .to.be.rejectedWith(`Invocation failed: "ONLY_CONTRACT_OWNER_CALL_ALLOWED`);
 
     const approve = await contract.methods.approve(wallets[1].publicKey, 0, true);
@@ -154,7 +158,7 @@ describe('credential nft', () => {
       assert.equal(decodedResult, true);
     }
 
-    const tr = await contract.methods.transfer(wallets[1].publicKey, wallets[2].publicKey, 0, {'None':[]}, { onAccount: wallets[1].publicKey });
+    const tr = await contract.methods.transfer(wallets[1].publicKey, wallets[2].publicKey, 0, {'None':[]}, { onAccount: accounts[1] });
     assert.equal(tr.decodedEvents[0].name, 'Transfer');
     assert.equal(tr.decodedEvents[0].args[0], wallets[1].publicKey);
     assert.equal(tr.decodedEvents[0].args[1], wallets[2].publicKey);
@@ -165,7 +169,7 @@ describe('credential nft', () => {
   });
 
   it('NFT: approve for all', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'Map': [["course", "NFT 101"], ["score", "A+"]]}, { onAccount: wallets[0].publicKey });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'Map': [["course", "NFT 101"], ["score", "A+"]]}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -182,14 +186,14 @@ describe('credential nft', () => {
   });
 
   it('NFT: invalid transfer', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'Map': [["course", "NFT 101"], ["score", "A+"]]}, { onAccount: wallets[0].publicKey });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'Map': [["course", "NFT 101"], ["score", "A+"]]}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
     assert.equal(token.decodedEvents[0].args[2], 0);
 
     await expect(
-      contract.methods.transfer(wallets[2].publicKey, wallets[1].publicKey, 0, { onAccount: wallets[0].publicKey }))
+      contract.methods.transfer(wallets[2].publicKey, wallets[1].publicKey, 0, { onAccount: accounts[0] }))
       .to.be.rejectedWith(`Invocation failed: "ONLY_OWNER_CALL_ALLOWED"`);
   });
 });
