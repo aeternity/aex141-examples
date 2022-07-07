@@ -265,9 +265,9 @@ contract MintableBurnableNFT =
         if(Address.is_contract(to))
             let c = Address.to_contract(to)
 
-            // Try to invoke onNFTReceived. 
-            switch(c.onNFTReceived(from, to, token_id, data, protected = true) : option(bool))
-                None => (true, false)       // The contract doesn't implement onNFTReceived
+            // Try to invoke on_nft_received. 
+            switch(c.on_nft_received(from, to, token_id, data, protected = true) : option(bool))
+                None => (true, false)       // The contract doesn't implement on_nft_received
                 Some(val) => (true, val)
         else
             // The address is NOT a contract.
