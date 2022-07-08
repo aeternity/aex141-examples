@@ -86,4 +86,4 @@ contract interface NFT =
     entrypoint is_approved_for_all : (address, address) => bool
 
 contract interface NFTReceiver = 
-    entrypoint onNFTReceived : (address, address, int, option(string)) => bool
+    entrypoint on_nft_received : (address, address, int, option(string)) => bool
