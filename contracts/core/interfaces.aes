@@ -23,9 +23,9 @@ contract interface NFT =
 
     record meta_info = 
         { name: string
-        , symbol: string 
+        , symbol: string
         , base_url: option(string)
-        , metadata_type : metadata_type}
+        , metadata_type : metadata_type }
 
     // datatype event 
     //     = Transfer(address, address, int)
