@@ -29,10 +29,10 @@ describe('swappable nft', () => {
     // initialize the contract instance
     contract = await aeSdk.getContractInstance({ source, fileSystem });
     await contract.deploy([
-      'Test NFT', 
-      'TST', 
-      {'URL': []}, 
-      {'None': []}
+      'Test NFT',
+      'TST',
+      {'None': []},
+      {'URL': []}
     ]);
 
     receiver_contract = await aeSdk.getContractInstance({ source: receiver_contract_source });
@@ -74,7 +74,7 @@ describe('swappable nft', () => {
     assert.equal(token_id, 0);
 
     {
-      const  { decodedResult } = await contract.methods.metadata(0);
+      const { decodedResult } = await contract.methods.metadata(0);
       assert.equal(decodedResult.String[token_id], 'https://example.com/mynft');
     }
 
@@ -148,10 +148,10 @@ describe('swappable nft', () => {
   it('NFT: contract with base_url', async () => {
     let contract = await aeSdk.getContractInstance({ source, fileSystem });
     await contract.deploy([
-      'Test NFT', 
-      'TST', 
-      {'URL': []}, 
-      'https://example.com/'
+      'Test NFT',
+      'TST',
+      'https://example.com/',
+      {'URL': []}
     ]);
 
     const token = await contract.methods.mint(wallets[0].publicKey, {'String': ['mynft']}, { onAccount: accounts[0] });

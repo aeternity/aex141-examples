@@ -31,8 +31,8 @@ describe('base nft', () => {
     await contract.deploy([
       'Test NFT', 
       'TST', 
-      {'URL': []}, 
-      {'None': []}
+      {'None': []},
+      {'URL': []}
     ]);
 
     receiver_contract = await aeSdk.getContractInstance({ source: receiver_contract_source });
@@ -118,9 +118,9 @@ describe('base nft', () => {
     let contract = await aeSdk.getContractInstance({ source, fileSystem });
     await contract.deploy([
       'Test NFT', 
-      'TST', 
-      {'URL': []}, 
-      'https://example.com/'
+      'TST',
+      'https://example.com/',
+      {'URL': []}
     ]);
 
     const token = await contract.methods.define_token(wallets[0].publicKey, {'String': ['mynft']}, { onAccount: accounts[0] });
