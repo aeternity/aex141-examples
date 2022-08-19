@@ -51,7 +51,7 @@ contract SwappableNFT =
     // URL, IPFD, OBJECT_ID: string
     // MAP: map(string, string)
     datatype metadata_type = URL | IPFS | OBJECT_ID | MAP
-    datatype metadata = String(string) | Map(string, string)
+    datatype metadata = MetadataIdentifier(string) | MetadataMap(map(string, string))
 
     record meta_info = 
         { name: string
@@ -149,8 +149,8 @@ contract SwappableNFT =
                             Some(v)
                         Some(base_url) =>
                             switch(v)
-                                String(s) =>
-                                    Some(String(String.concats([base_url, s])))
+                                MetadataIdentifier(s) =>
+                                    Some(MetadataIdentifier(String.concats([base_url, s])))
                 else
                     // Not an URL, so return the metadata as it is.
                     Some(v)

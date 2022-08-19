@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "description": "NFT examples and tooling for Aeternity",
   "scripts": {
-    "test": "mocha ./test/**/*.js --timeout 0 --exit"
+    "test": "mocha ./test/**/*.js --timeout 0 --exit",
+    "test:base": "mocha ./test/baseNFTTest.js --timeout 0 --exit",
+    "test:credential": "mocha ./test/credentialNFTTest.js --timeout 0 --exit",
+    "test:mintableburnable": "mocha ./test/mintableBurnableNFTTest.js --timeout 0 --exit",
+    "test:swappable": "mocha ./test/swappableNFTTest.js --timeout 0 --exit"
   },
   "dependencies": {
     "@aeternity/aepp-sdk": "^12.1.2",
