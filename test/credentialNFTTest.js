@@ -73,7 +73,7 @@ describe('credential nft', () => {
 
     {
       const { decodedResult } = await contract.methods.metadata(0);
-      assert.deepEqual(decodedResult.Map, {course: "NFT 101", score: "A+" });
+      assert.deepEqual(decodedResult.MetadataMap, {course: "NFT 101", score: "A+" });
     }
 
     {
