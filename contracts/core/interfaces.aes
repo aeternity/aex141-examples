@@ -19,7 +19,7 @@
 
 contract interface NFT =
     datatype metadata_type = URL | IPFS | OBJECT_ID | MAP
-    datatype metadata = String(string) | Map(string, string)
+    datatype metadata = MetadataIdentifier(string) | MetadataMap(map(string, string))
 
     record meta_info = 
         { name: string

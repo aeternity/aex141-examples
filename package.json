@@ -3,15 +3,22 @@
   "version": "1.0.0",
   "description": "NFT examples and tooling for Aeternity",
   "scripts": {
-    "test": "mocha ./test/**/*.js --timeout 0 --exit"
+    "test": "mocha ./test/**/*.js --timeout 0 --exit",
+    "test:base": "mocha ./test/baseNFTTest.js --timeout 0 --exit",
+    "test:credential": "mocha ./test/credentialNFTTest.js --timeout 0 --exit",
+    "test:mintableburnable": "mocha ./test/mintableBurnableNFTTest.js --timeout 0 --exit",
+    "test:swappable": "mocha ./test/swappableNFTTest.js --timeout 0 --exit"
   },
   "dependencies": {
     "@aeternity/aepp-sdk": "^12.1.2",
     "chai-as-promised": "^7.1.1"
   },
   "devDependencies": {
-    "@aeternity/aeproject": "^4.1.1",
+    "@aeternity/aeproject": "^4.1.5",
     "chai": "^4.3.6",
     "mocha": "^9.2.2"
+  },
+  "overrides": {
+    "@aeternity/aepp-calldata": "github:aeternity/aepp-calldata-js#5560c87936243b7484ee5cada09bd0f550f41308"
   }
 }

@@ -64,7 +64,7 @@ describe('mintable, burnable nft', () => {
   });
 
   it('NFT: mint token', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: accounts[0] });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataIdentifier': ['https://example.com/mynft']}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -75,7 +75,7 @@ describe('mintable, burnable nft', () => {
 
     {
       const { decodedResult } = await contract.methods.metadata(0);
-      assert.equal(decodedResult.String[token_id], 'https://example.com/mynft');
+      assert.equal(decodedResult.MetadataIdentifier[token_id], 'https://example.com/mynft');
     }
 
     {
@@ -94,7 +94,7 @@ describe('mintable, burnable nft', () => {
     }
 
     let new_token_id = token_id + BigInt(1);
-    const token1 = await contract.methods.mint(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: accounts[0] });
+    const token1 = await contract.methods.mint(wallets[0].publicKey, {'MetadataIdentifier': ['https://example.com/mynft']}, { onAccount: accounts[0] });
     assert.equal(token1.decodedEvents[0].name, 'Transfer');
     assert.equal(token1.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token1.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -105,14 +105,14 @@ describe('mintable, burnable nft', () => {
   it('NFT: mint only by contract owner', async () => {
     await expect(
       contract.methods.mint(wallets[0].publicKey, 
-      {'String': ['https://example.com/mynft']},
+      {'MetadataIdentifier': ['https://example.com/mynft']},
       {'None': []}, 
       { onAccount: accounts[1] }))
       .to.be.rejectedWith(`Invocation failed: "ONLY_CONTRACT_OWNER_CALL_ALLOWED"`);
   });
 
   it('NFT: burn token', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: accounts[0] });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataIdentifier': ['https://example.com/mynft']}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -126,7 +126,7 @@ describe('mintable, burnable nft', () => {
   });
 
   it('NFT: burn only by authorized', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: accounts[0] });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataIdentifier': ['https://example.com/mynft']}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -146,7 +146,7 @@ describe('mintable, burnable nft', () => {
       {'URL': []}
     ]);
 
-    const token = await contract.methods.mint(wallets[0].publicKey, {'String': ['mynft']}, { onAccount: accounts[0] });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataIdentifier': ['mynft']}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -154,7 +154,7 @@ describe('mintable, burnable nft', () => {
 
     {
       const  { decodedResult } = await contract.methods.metadata(0);
-      assert.equal(decodedResult.String[0], 'https://example.com/mynft');
+      assert.equal(decodedResult.MetadataIdentifier[0], 'https://example.com/mynft');
     }
 
     {
@@ -167,7 +167,7 @@ describe('mintable, burnable nft', () => {
   });
 
   it('NFT: transfer', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: accounts[0] });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataIdentifier': ['https://example.com/mynft']}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -184,7 +184,7 @@ describe('mintable, burnable nft', () => {
   });
 
   it('NFT: approve', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: accounts[0] });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataIdentifier': ['https://example.com/mynft']}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -223,7 +223,7 @@ describe('mintable, burnable nft', () => {
   });
 
   it('NFT: approve for all', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: accounts[0] });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataIdentifier': ['https://example.com/mynft']}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -251,7 +251,7 @@ describe('mintable, burnable nft', () => {
   });
 
   it('NFT: unauthorized transfer', async () => {
-    const token = await contract.methods.mint(wallets[1].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: accounts[0] });
+    const token = await contract.methods.mint(wallets[1].publicKey, {'MetadataIdentifier': ['https://example.com/mynft']}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[1].publicKey);
@@ -263,7 +263,7 @@ describe('mintable, burnable nft', () => {
   });
 
   it('NFT: invalid transfer', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: accounts[0] });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataIdentifier': ['https://example.com/mynft']}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -275,7 +275,7 @@ describe('mintable, burnable nft', () => {
   });
 
   it('NFT: safe transfer', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: accounts[0] });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataIdentifier': ['https://example.com/mynft']}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -290,7 +290,7 @@ describe('mintable, burnable nft', () => {
   });
 
   it('NFT: failed safe transfer', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'String': ['https://example.com/mynft']}, { onAccount: accounts[0] });
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataIdentifier': ['https://example.com/mynft']}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
