@@ -62,7 +62,8 @@ describe('credential nft', () => {
   });
 
   it('NFT: mint token', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataMap': [{course: "NFT 101", score: "A+"}]}, { onAccount: accounts[0] });
+    const metadataMap = new Map([['course', 'NFT101'],['score', 'A+']]);
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataMap': [metadataMap]}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -73,7 +74,7 @@ describe('credential nft', () => {
 
     {
       const { decodedResult } = await contract.methods.metadata(0);
-      assert.deepEqual(decodedResult.MetadataMap, {course: "NFT 101", score: "A+" });
+      assert.deepEqual(decodedResult.MetadataMap[0], metadataMap);
     }
 
     {
@@ -92,7 +93,8 @@ describe('credential nft', () => {
     }
 
     let new_token_id = token_id + BigInt(1);
-    const token1 = await contract.methods.mint(wallets[0].publicKey, {'MetadataMap': [{course: "NFT 201", score: "A+"}]}, { onAccount: accounts[0] });
+    const metadataMap2 = new Map([['course', 'NFT201'],['score', 'A+']]);
+    const token1 = await contract.methods.mint(wallets[0].publicKey, {'MetadataMap': [metadataMap2]}, { onAccount: accounts[0] });
     assert.equal(token1.decodedEvents[0].name, 'Transfer');
     assert.equal(token1.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token1.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -101,16 +103,18 @@ describe('credential nft', () => {
   });
 
   it('NFT: mint only by contract owner', async () => {
+    const metadataMap = new Map([['course', 'NFT101'],['score', 'A+']]);
     await expect(
       contract.methods.mint(wallets[0].publicKey, 
-      {'MetadataMap': [{course: "NFT 101", score: "A+"}]},
+      {'MetadataMap': [metadataMap]},
       {'None': []}, 
       { onAccount: accounts[1] }))
       .to.be.rejectedWith(`Invocation failed: "ONLY_CONTRACT_OWNER_CALL_ALLOWED"`);
   });
 
   it('NFT: transfer', async () => {
-    const token = await contract.methods.mint(wallets[1].publicKey, {'MetadataMap': [{course: "NFT 101", score: "A+"}]}, { onAccount: accounts[0] });
+    const metadataMap = new Map([['course', 'NFT101'],['score', 'A+']]);
+    const token = await contract.methods.mint(wallets[1].publicKey, {'MetadataMap': [metadataMap]}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[1].publicKey);
@@ -131,7 +135,8 @@ describe('credential nft', () => {
   });
 
   it('NFT: approve', async () => {
-    const token = await contract.methods.mint(wallets[1].publicKey, {'MetadataMap': [{course: "NFT 101", score: "A+"}]}, { onAccount: accounts[0] });
+    const metadataMap = new Map([['course', 'NFT101'],['score', 'A+']]);
+    const token = await contract.methods.mint(wallets[1].publicKey, {'MetadataMap': [metadataMap]}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[1].publicKey);
@@ -169,7 +174,8 @@ describe('credential nft', () => {
   });
 
   it('NFT: approve for all', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataMap': [{course: "NFT 101", score: "A+"}]}, { onAccount: accounts[0] });
+    const metadataMap = new Map([['course', 'NFT101'],['score', 'A+']]);
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataMap': [metadataMap]}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
@@ -186,7 +192,8 @@ describe('credential nft', () => {
   });
 
   it('NFT: invalid transfer', async () => {
-    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataMap': [{course: "NFT 101", score: "A+"}]}, { onAccount: accounts[0] });
+    const metadataMap = new Map([['course', 'NFT101'],['score', 'A+']]);
+    const token = await contract.methods.mint(wallets[0].publicKey, {'MetadataMap': [metadataMap]}, { onAccount: accounts[0] });
     assert.equal(token.decodedEvents[0].name, 'Transfer');
     assert.equal(token.decodedEvents[0].args[0].substr(2), contract.deployInfo.address.substr(2));
     assert.equal(token.decodedEvents[0].args[1], wallets[0].publicKey);
