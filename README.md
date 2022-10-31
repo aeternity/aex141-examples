@@ -1,5 +1,20 @@
-# NFT contracts and tooling
+# AEX-141 NFT Examples
 This repo contains example contracts and tooling for Non-Fungible Tokens based on Aeternity's [AEX-141](https://github.com/aeternity/AEXs/blob/master/AEXS/aex-141.md) standard.
+
+## !!! CAUTION !!!
+
+The examples provided in this repository are **OUTDATED**!
+
+There has been a lot of discussion recently and the AEX-141 standard underwent serious updates and improvements.
+
+## Other examples
+
+The currently only available and up-to-date example of AEX-141 implementation can be found here:
+- https://github.com/aeternity/aex141-nft-collection-example
+
+## Support
+For support please use the [Aeternity Forum](https://forum.aeternity.com/t/aeternity-nft-token-standard/9781).
+For bugs and feature requests (including other examples) please open an issue on this GitHub repo.
 
 ## License
 Copyright (c) 2022 [Toqns Inc.](https://toqns.com)
@@ -17,20 +32,3 @@ INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
 LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
-
-## Support
-For support please use the [Aeternity Forum](https://forum.aeternity.com).
-For bugs and feature requests (including other examples) please open an issue on this GitHub repo.
-
-## How to use
-
-The repo provides different kinds of example contracts. The contracts can be found in the `contracts` directory. Test cases can be found in the `test` directory.
-
-Although this repo uses aeproject, it's not recommended to use this repo as a base project. Instead copy the contract(s) and tests into your own project.
-
-### Example contracts
-
-- `base_nft.aes` is an example of a uniqe NFT representing a single object.
-- `mintable_burnable.aes` is an example of an NFT with the `mintable` and `burnable` extension.
-- `swappable.aes` is and example of an NFT with the `swappable` extension.
-- `credential.aes` is an example of a mintable course graduation NFT smart contract.
